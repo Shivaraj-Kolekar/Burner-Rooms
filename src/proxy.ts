@@ -8,6 +8,7 @@ export const proxy = async (req: NextRequest) => {
   if (!roomMatch) return NextResponse.redirect(new URL("/", req.url)); //if room id not exist redirect to main page
   const id = roomMatch[1]; //store the room id
   const metadata = await redis.hgetall<{
+    maxParticipants: number;
     connected: string[];
     createdAt: number;
   }>(`meta:${id}`); // gets the redis db data
@@ -22,7 +23,7 @@ export const proxy = async (req: NextRequest) => {
   }
 
   //This tell only 2 users can be connected and prevent other from joining the room
-  if (metadata.connected.length >= 4) {
+  if (metadata.connected.length >= metadata.maxParticipants) {
     return NextResponse.redirect(new URL("/?error=room-is-full", req.url));
   }
 

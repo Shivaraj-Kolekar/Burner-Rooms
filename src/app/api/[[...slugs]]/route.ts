@@ -5,23 +5,39 @@ import { nanoid } from "nanoid";
 import { authMiddleware } from "./auth";
 import z from "zod";
 import { Message, realtime } from "@/lib/realtime";
-const ROOM_TTL_SECONDS = 60 * 10;
 
 const rooms = new Elysia({ prefix: "/rooms" })
-  .post("/create", async () => {
-    const id = nanoid();
-    await redis.hset(`meta:${id}`, {
-      connected: [],
-      createdAt: Date.now(),
-    });
-
-    await redis.expire(`meta:${id}`, ROOM_TTL_SECONDS);
-    return { id };
-  })
+  .post(
+    "/create",
+    async ({ body }) => {
+      const id = nanoid();
+      await redis.hset(`meta:${id}`, {
+        connected: [],
+        createdAt: Date.now(),
+        roomName: body.roomName,
+        maxParticipants: body.maxParticipants,
+        timelimit: body.timelimit,
+      });
+      const ROOM_TTL_SECONDS = body.timelimit ? 60 * body.timelimit : 60 * 10;
+      await redis.expire(`meta:${id}`, ROOM_TTL_SECONDS);
+      return { id };
+    },
+    {
+      body: z.object({
+        roomName: z.string().min(6).max(20).optional(),
+        maxParticipants: z.number().int().min(2).max(10).optional(),
+        timelimit: z.number().int().min(1).max(30).optional(),
+      }),
+    },
+  )
   .use(authMiddleware)
   .get("/ttl", async (auth) => {
     const ttl = await redis.ttl(`meta:${auth.auth.roomid}`);
     return { ttl: ttl > 0 ? ttl : 0 };
+  })
+  .get("/info", async (auth) => {
+    const roominfo = await redis.hgetall(`meta:${auth.auth.roomid}`);
+    return roominfo;
   })
   .delete(
     "/",
@@ -36,7 +52,7 @@ const rooms = new Elysia({ prefix: "/rooms" })
       ]);
     },
 
-    { query: z.object({ roomid: z.string() }) }
+    { query: z.object({ roomid: z.string() }) },
   );
 
 const messages = new Elysia({ prefix: "/messages" })
@@ -76,7 +92,7 @@ const messages = new Elysia({ prefix: "/messages" })
         sender: z.string().max(100),
         text: z.string().max(1000),
       }),
-    }
+    },
   )
   .get(
     "/",
@@ -84,7 +100,7 @@ const messages = new Elysia({ prefix: "/messages" })
       const messages = await redis.lrange<Message>(
         `messages: ${auth.roomid}`,
         0,
-        -1
+        -1,
       );
       return {
         messages: messages.map((m) => ({
@@ -93,7 +109,7 @@ const messages = new Elysia({ prefix: "/messages" })
         })),
       };
     },
-    { query: z.object({ roomid: z.string() }) }
+    { query: z.object({ roomid: z.string() }) },
   );
 const app = new Elysia({ prefix: "/api" }).use(rooms).use(messages);
 
