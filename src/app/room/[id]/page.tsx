@@ -79,7 +79,7 @@ const RoomPage = () => {
         width={400}
         columns={3}
         className="overflow-y-auto"
-        fetchGifs={(offset) => gif.trending({ type, limit: 10 })}
+        fetchGifs={(offset) => gif.trending({ offset, limit: 10 })}
         onGifClick={(gif) => {
           setInput(gif.images.fixed_height.url);
         }}
@@ -136,12 +136,17 @@ const RoomPage = () => {
 
   const { data: roomData } = useQuery({
     queryKey: ["room-info", roomid],
-    queryFn: async () => {
+    queryFn: async (): Promise<RoomData> => {
       const res = await client.rooms.info.get({
         query: { roomid },
       });
-
-      return res.data;
+      if (!res.data) {
+        throw new Error("Room data is null");
+      }
+      return {
+        ...res.data,
+        connected: Array.isArray(res.data.connected) ? res.data.connected : [],
+      };
     },
   });
   useEffect(() => {
@@ -178,7 +183,7 @@ const RoomPage = () => {
     setCopyState("Copied");
     setTimeout(() => setCopyState("Copy"), 2000);
   };
-  const copyMessage = (msg) => {
+  const copyMessage = (msg: string) => {
     navigator.clipboard.writeText(msg);
     setCopyMessageState("Copied");
     toast.success("Message copied!");
@@ -232,6 +237,12 @@ const RoomPage = () => {
       inputRef.current?.focus();
     }
   };
+  interface RoomData {
+    roomName?: string;
+    maxParticipants?: number;
+    timelimit?: number;
+    connected: string[]; // or User[], depending on your user type
+  }
   return (
     <>
       <main className="flex flex-col justify-center min-h-screen overflow-hidden ">
@@ -240,7 +251,7 @@ const RoomPage = () => {
             <span className="text-xs text-zinc-500 uppercase">
               Room Name :{" "}
               <span className="text-green-500 font-bold">
-                {roomData?.roomName ? roomData.roomName : "room"}
+                {roomData?.roomName as string}
               </span>
             </span>
             <div className="h-8 w-px bg-zinc-800"></div>
@@ -268,8 +279,8 @@ const RoomPage = () => {
             <div className="h-8 w-px bg-zinc-800"></div>
             <div>
               <span>
-                Room Participants: {roomData?.connected.length}/
-                {roomData?.maxParticipants}
+                Room Participants: {roomData?.connected?.length}/
+                {roomData?.maxParticipants as number}
               </span>
             </div>{" "}
             <div className="h-8 w-px bg-zinc-800"></div>
@@ -293,27 +304,27 @@ const RoomPage = () => {
                   </div>
                   <hr></hr>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="col-span-1 place-items-center border">
+                    <div className="col-span-1 bg-muted place-items-center border">
                       <QRCodeCanvas
                         className=" "
                         value={url}
-                        size={220}
+                        size={228}
                         level="H" // High error correction
                         includeMargin={true}
                         imageSettings={{
                           src: "/logo.png", // Optional: add a logo in the center
                           height: 40,
                           width: 40,
-                          // excavate: true,
+                          excavate: true,
                         }}
                       />
                     </div>
-                    <div className="border  p-4 text-center ">
+                    <div className="border bg-muted p-4 text-center ">
                       <h1 className="text-center my-3">Room Info</h1>
-                      <div className="flex flex-wrap gap-4 mb-3 flex-col">
+                      <div className="flex  flex-wrap gap-4 mb-3 flex-col">
                         <div className="items-center flex  gap-1">
                           <MessageCircle />
-                          <p>Name:{roomData?.roomName} </p>
+                          <p>Name:{roomData?.roomName as string} </p>
                         </div>
                         <div className="items-center flex gap-2">
                           <Users></Users>
@@ -324,7 +335,9 @@ const RoomPage = () => {
                         </div>
                         <div className="items-center flex gap-2">
                           <Clock></Clock>
-                          <span>{formatTimeRemaining(ttlData?.ttl)} Left</span>
+                          <span>
+                            {formatTimeRemaining(ttlData?.ttl as number)} Left
+                          </span>
                         </div>
                       </div>
                       <Button className="w-full h-8">Download QR code</Button>

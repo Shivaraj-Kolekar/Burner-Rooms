@@ -104,7 +104,7 @@ function Home() {
                   <Label>Room Time Limit:</Label>
                   <Input
                     type="number"
-                    onChange={(e) => setTime(e.target.value)}
+                    onChange={(e) => setTime(Number(e.target.value))}
                     value={time}
                   ></Input>
                 </div>
@@ -112,7 +112,7 @@ function Home() {
                   <Label>Max Users:</Label>
                   <Input
                     type="number"
-                    onChange={(e) => setParticipants(e.target.value)}
+                    onChange={(e) => setParticipants(Number(e.target.value))}
                     value={participants}
                   ></Input>
                 </div>

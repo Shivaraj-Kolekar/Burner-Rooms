@@ -5,7 +5,12 @@ import { nanoid } from "nanoid";
 import { authMiddleware } from "./auth";
 import z from "zod";
 import { Message, realtime } from "@/lib/realtime";
-
+interface RoomData {
+  roomName?: string;
+  maxParticipants?: number;
+  timelimit?: number;
+  connected: string[]; // or User[], depending on your user type
+}
 const rooms = new Elysia({ prefix: "/rooms" })
   .post(
     "/create",
