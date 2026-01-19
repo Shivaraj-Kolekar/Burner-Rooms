@@ -60,6 +60,9 @@ export const Page = () => {
 };
 
 const RoomPage = () => {
+  interface MessagesResponse {
+    messages: Message[];
+  }
   interface Message {
     id: string;
     sender: string;
@@ -71,7 +74,6 @@ const RoomPage = () => {
     replyCount?: number;
     parentMessage?: Message;
   }
-
   interface RoomData {
     roomName?: string;
     maxParticipants?: number;
@@ -199,15 +201,19 @@ const RoomPage = () => {
     toast.success("Message copied!");
     setTimeout(() => setCopyMessageState("Copy"), 2000);
   };
-
-  const { data: messages, refetch } = useQuery({
+  const { data: messages, refetch } = useQuery<MessagesResponse>({
     queryKey: ["messages", roomid],
     queryFn: async () => {
       const res = await client.messages.get({
         query: { roomid, includeReplies: "true" },
       });
-      console.log("Fetched messages:", res.data);
-      return res.data;
+
+      // Handle null response
+      if (!res.data) {
+        return { messages: [] };
+      }
+
+      return res.data as MessagesResponse;
     },
   });
 
@@ -273,7 +279,7 @@ const RoomPage = () => {
       <header className="border-b border-zinc-800 bg-background z-10 shrink-0">
         {/* Desktop Header */}
         <div className="hidden lg:flex justify-between items-center p-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <div className="border-2 bg-muted/50 hover:border-orange-600 transition-all flex p-1 items-center gap-2">
               <div className="bg-muted border p-2">
                 <Box />
@@ -403,7 +409,7 @@ const RoomPage = () => {
               </span>
               <p>Agents</p>
             </div>
-            <ModeToggle />
+            {/*<ModeToggle />*/}
             <Button
               variant="destructive"
               onClick={() => DestroyRoom()}
@@ -505,17 +511,17 @@ const RoomPage = () => {
           {messages?.messages && messages.messages.length > 0 ? (
             <div className="space-y-3">
               {messages.messages.map((msg) => {
-                const parentMessage = msg.parentId
-                  ? getParentMessage(msg.parentId)
+                const parentMessage = msg?.parentId
+                  ? getParentMessage(msg?.parentId)
                   : null;
                 return (
                   <div
-                    key={msg.id}
-                    className={`flex ${msg.sender === username ? "justify-end" : "justify-start"}`}
+                    key={msg?.id}
+                    className={`flex ${msg?.sender === username ? "justify-end" : "justify-start"}`}
                   >
                     <div
                       className={`p-3 rounded-lg max-w-[85%] sm:max-w-[70%] md:max-w-[60%] ${
-                        msg.sender === username
+                        msg?.sender === username
                           ? "bg-orange-600/20 border border-orange-600/50"
                           : "bg-muted border border-accent"
                       }`}

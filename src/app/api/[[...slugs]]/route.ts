@@ -164,17 +164,17 @@ const messages = new Elysia({ prefix: "/messages" })
       // Filter to only top-level messages (no parent) if we're not including replies
       const topLevelMessages =
         includeReplies === "false"
-          ? validMessages.filter((m) => !m.parentId)
+          ? validMessages.filter((m) => !m?.parentId)
           : validMessages;
 
       // Optionally include replies
       if (includeReplies === "true") {
         const messagesWithReplies = await Promise.all(
           topLevelMessages.map(async (msg) => {
-            if (msg.parentId) return msg; // Skip if it's already a reply
+            if (msg?.parentId) return msg; // Skip if it's already a reply
 
             const replyIds = await redis.lrange(
-              `replies:${roomid}:${msg.id}`,
+              `replies:${roomid}:${msg?.id}`,
               0,
               -1,
             );
@@ -182,7 +182,7 @@ const messages = new Elysia({ prefix: "/messages" })
             if (!replyIds || replyIds.length === 0) {
               return {
                 ...msg,
-                token: msg.token === auth.token ? auth.token : undefined,
+                token: msg?.token === auth.token ? auth.token : undefined,
                 replies: [],
               };
             }
@@ -192,15 +192,15 @@ const messages = new Elysia({ prefix: "/messages" })
                 const reply = await redis.hgetall(`message:${roomid}:${id}`);
                 return {
                   ...reply,
-                  token: reply.token === auth.token ? auth.token : undefined,
+                  token: reply?.token === auth.token ? auth.token : undefined,
                 };
               }),
             );
 
             return {
               ...msg,
-              token: msg.token === auth.token ? auth.token : undefined,
-              replies: replies.filter((r) => r && r.id),
+              token: msg?.token === auth.token ? auth.token : undefined,
+              replies: replies.filter((r) => r && r?.token),
             };
           }),
         );
@@ -210,7 +210,7 @@ const messages = new Elysia({ prefix: "/messages" })
       return {
         messages: topLevelMessages.map((m) => ({
           ...m,
-          token: m.token === auth.token ? auth.token : undefined,
+          token: m?.token === auth.token ? auth.token : undefined,
         })),
       };
     },
@@ -239,7 +239,7 @@ const messages = new Elysia({ prefix: "/messages" })
           const reply = await redis.hgetall<Message>(`message:${roomid}:${id}`);
           return {
             ...reply,
-            token: reply.token === auth.token ? auth.token : undefined,
+            token: reply?.token === auth.token ? auth.token : undefined,
           };
         }),
       );

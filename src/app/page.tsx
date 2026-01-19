@@ -390,7 +390,7 @@ function Home() {
       <footer className="border-t border-border/40 py-4">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <p className="text-muted-foreground font-mono text-xs">
-            © 2025 Burner Rooms • No data collection
+            © {new Date().getFullYear()} Burner Rooms
           </p>
         </div>
       </footer>
