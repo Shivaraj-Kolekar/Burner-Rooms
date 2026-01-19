@@ -8,6 +8,8 @@ const message = z.object({
   timestamp: z.number(),
   roomid: z.string(),
   token: z.string(),
+  parentId: z.string().optional(),
+  replyCount: z.number().optional(),
 });
 const destroy = z.object({
   isDestroyed: z.literal(true),

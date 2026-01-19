@@ -3,7 +3,22 @@ import { useEffect, useState } from "react";
 import { nanoid } from "nanoid";
 
 export const useUsername = () => {
-  const ANIMALS = ["dog", "wolf", "shark", "cat", "lion", "tiger"];
+  const ANIMALS = [
+    "dog",
+    "wolf",
+    "panda",
+    "panther",
+    "seal",
+    "rabbit",
+    "dolphin",
+    "whale",
+    "octopus",
+    "crocodile",
+    "shark",
+    "cat",
+    "lion",
+    "tiger",
+  ];
   const STORAGE_KEY = "chat_username";
   const [username, setUsername] = useState("");
   const generateUsername = () => {
