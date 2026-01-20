@@ -4,8 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useUsername } from "@/hooks/useUsername";
 import { client } from "@/lib/client";
+import { Description } from "@radix-ui/react-dialog";
 import { useMutation } from "@tanstack/react-query";
 import {
   AlertCircle,
@@ -13,14 +19,16 @@ import {
   Shield,
   Users,
   MessageSquare,
-  Zap,
   Lock,
   EyeOff,
   Trash,
   Smile,
   Reply,
   Clock,
+  Info,
+  Pen,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -45,8 +53,57 @@ function Home() {
   const [roomName, setRoomName] = useState("");
   const { username } = useUsername();
 
+  // Form validation
+  const validateForm = () => {
+    if (!roomName.trim()) {
+      toast.error("Room name is required", {
+        description: "Please enter a name for your room",
+      });
+      return false;
+    }
+    if (roomName.length < 4) {
+      toast.error("Invalid room name", {
+        description: "Room name must be at least 4 character long",
+      });
+      return false;
+    }
+    if (time < 1) {
+      toast.error("Invalid time limit", {
+        description: "Time limit must be at least 1 minute",
+      });
+      return false;
+    }
+
+    if (time > 30) {
+      toast.error("Time limit exceeded", {
+        description: "Maximum allowed time is 30 minutes",
+      });
+      return false;
+    }
+
+    if (participants < 2) {
+      toast.error("Invalid participant count", {
+        description: "At least 2 participants required",
+      });
+      return false;
+    }
+
+    if (participants > 10) {
+      toast.error("Participant limit exceeded", {
+        description: "Maximum allowed participants is 10",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const { mutate: CreateRoom, isPending } = useMutation({
     mutationFn: async () => {
+      if (!validateForm()) {
+        return;
+      }
+
       const res = await client.rooms.create.post({
         roomName: roomName,
         timelimit: Number(time),
@@ -62,11 +119,11 @@ function Home() {
   });
 
   const features = [
-    {
-      icon: Shield,
-      title: "End-to-End Encrypted",
-      description: "Zero-knowledge architecture",
-    },
+    // {
+    //   icon: Shield,
+    //   title: "End-to-End Encrypted",
+    //   description: "Zero-knowledge architecture",
+    // },
     {
       icon: EyeOff,
       title: "100% Anonymous",
@@ -84,13 +141,18 @@ function Home() {
     },
     {
       icon: Smile,
-      title: "Emoji & GIF",
+      title: "Emojis",
       description: "Rich message support",
     },
     {
       icon: Users,
       title: "Live Participants",
       description: "See who's online",
+    },
+    {
+      icon: Pen,
+      title: "Customizable",
+      description: "Make rooms with custom time and user limit",
     },
     {
       icon: MessageSquare,
@@ -132,7 +194,7 @@ function Home() {
     <main className="min-h-screen bg-background flex flex-col">
       {/* Hero Section */}
       <div className="  py-16">
-        <div className="max-w-2xl mx-auto px-4">
+        <div className="max-w-2xl mx-auto ">
           <div className="space-y-6">
             {/* Terminal Window */}
             <div className="border-2 border-orange-600/30 bg-black/40">
@@ -191,12 +253,12 @@ function Home() {
               <div className="border border-orange-600/30 bg-orange-600/5 p-4">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="border border-orange-600 bg-orange-600/10 p-2">
-                    <Shield className="h-5 w-5 text-orange-500" />
+                    <Clock className="h-5 w-5 text-orange-500" />
                   </div>
-                  <h3 className="font-mono font-bold text-sm">E2E Encrypted</h3>
+                  <h3 className="font-mono font-bold text-sm">Time-Bombed</h3>
                 </div>
                 <p className="text-xs text-muted-foreground font-mono">
-                  Zero-knowledge architecture. Your messages stay private.
+                  Set expiry limits. Conversations vanish automatically.
                 </p>
               </div>
 
@@ -281,9 +343,21 @@ function Home() {
 
                 {/* Room Name */}
                 <div className="space-y-2">
-                  <Label className="text-xs text-muted-foreground font-mono">
-                    Room Name
-                  </Label>
+                  <div className="flex  flex-row gap-2">
+                    <Label className="text-xs text-muted-foreground font-mono">
+                      Room Name <span className="text-destructive">*</span>
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        {" "}
+                        <Info size={16} className=""></Info>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Room name should be atleast 4 characters long</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+
                   <Input
                     type="text"
                     maxLength={20}
@@ -297,26 +371,49 @@ function Home() {
                 {/* Grid */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground font-mono">
-                      Time Limit (min)
-                    </Label>
+                    <div className="flex items-center gap-1.5 group relative">
+                      <Label className="text-xs text-muted-foreground font-mono">
+                        Time Limit (min){" "}
+                        <span className="text-destructive">*</span>
+                      </Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          {" "}
+                          <Info size={16} className=""></Info>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Max Room duration : 30 minutes</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Input
                       type="number"
                       min={1}
-                      max={1440}
+                      max={30}
                       onChange={(e) => setTime(Number(e.target.value))}
                       value={time}
                       className="border-orange-600/40 font-mono"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground font-mono">
-                      Max Users
-                    </Label>
+                    <div className="flex items-center gap-1.5 group relative">
+                      <Label className="text-xs text-muted-foreground font-mono">
+                        Max Users <span className="text-destructive">*</span>
+                      </Label>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          {" "}
+                          <Info size={16} className=""></Info>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Max user limit: 10</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Input
                       type="number"
                       min={2}
-                      max={50}
+                      max={10}
                       onChange={(e) => setParticipants(Number(e.target.value))}
                       value={participants}
                       className="border-orange-600/40 font-mono"
@@ -338,7 +435,7 @@ function Home() {
 
           {/* Features Section */}
           <div className="space-y-4">
-            <h2 className="text-sm border-b-2 border-b-orange-500 pb-2   font-mono text-muted-foreground text-center">
+            <h2 className="text-lg border-b-2 border-b-orange-500 pb-2   font-mono text-muted-foreground text-center">
               Features
             </h2>
 
@@ -390,7 +487,14 @@ function Home() {
       <footer className="border-t border-border/40 py-4">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <p className="text-muted-foreground font-mono text-xs">
-            © {new Date().getFullYear()} Burner Rooms
+            © {new Date().getFullYear()} Burner Rooms - Built by{" "}
+            <Link
+              className="font-bold"
+              href="https://github.com/Shivaraj-Kolekar"
+              target="_blank"
+            >
+              Shivaraj Kolekar
+            </Link>
           </p>
         </div>
       </footer>

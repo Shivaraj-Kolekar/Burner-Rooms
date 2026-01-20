@@ -490,7 +490,7 @@ const RoomPage = () => {
                     </div>
                   </DialogContent>
                 </Dialog>
-                <ModeToggle />
+                {/*<ModeToggle />*/}
                 <Button
                   variant="destructive"
                   onClick={() => DestroyRoom()}
@@ -581,7 +581,6 @@ const RoomPage = () => {
                             <ContextMenuItem onClick={() => setReplyingTo(msg)}>
                               Reply
                             </ContextMenuItem>
-                            <ContextMenuItem>React</ContextMenuItem>
                           </ContextMenuContent>
                         </ContextMenu>
                       )}

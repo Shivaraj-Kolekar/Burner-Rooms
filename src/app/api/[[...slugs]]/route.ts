@@ -30,7 +30,7 @@ const rooms = new Elysia({ prefix: "/rooms" })
     },
     {
       body: z.object({
-        roomName: z.string().min(6).max(20).optional(),
+        roomName: z.string().min(4).max(20).optional(),
         maxParticipants: z.number().int().min(2).max(10).optional(),
         timelimit: z.number().int().min(1).max(30).optional(),
       }),
