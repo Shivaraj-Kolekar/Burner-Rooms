@@ -4,7 +4,7 @@ import { JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { ThemeProvider } from "@/components/theme-providers";
 import { Toaster } from "@/components/ui/sonner";
-
+import { Analytics } from "@vercel/analytics/next";
 const fontSans = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-sans",
@@ -127,6 +127,7 @@ export default function RootLayout({
         >
           <Providers>
             <Toaster position="top-right" />
+            <Analytics />
             {children}
           </Providers>
         </ThemeProvider>
